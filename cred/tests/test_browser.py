@@ -1,4 +1,4 @@
-from django.test import LiveServerTestCase
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.urlresolvers import reverse
 from django.test.utils import override_settings
 from django.utils.unittest import SkipTest
@@ -20,7 +20,7 @@ from selenium.webdriver.common.keys import Keys
 from testconfig import config
 
 
-class JavascriptTests(LiveServerTestCase):
+class JavascriptTests(StaticLiveServerTestCase):
     def setUp(self):
         self.data = TestData()
 
