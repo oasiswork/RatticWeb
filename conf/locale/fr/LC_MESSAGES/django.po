@@ -306,7 +306,7 @@ msgid ""
 "We sent you a text message, please enter the tokens we\n"
 "        sent."
 msgstr ""
-"Merci de saisir le code qui vient de vous être envoyé\n
+"Merci de saisir le code qui vient de vous être envoyé\n"
 "        par SMS."
 
 #: account/templates/account_tfa_login.html:17
