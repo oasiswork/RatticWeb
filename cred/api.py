@@ -40,7 +40,14 @@ class CredAuthorization(Authorization):
         raise Unauthorized("Not yet implemented.")
 
     def create_detail(self, object_list, bundle):
-        raise Unauthorized("Not yet implemented.")
+        if not bundle.request.user.groups.filter(
+                name=bundle.obj.group).exists():
+            return False
+
+        CredAudit(
+            audittype=CredAudit.CREDADD, cred=bundle.obj,
+            user=bundle.request.user).save()
+        return True
 
     def update_list(self, object_list, bundle):
         raise Unauthorized("Not yet implemented.")
@@ -101,10 +108,6 @@ class CredResource(ModelResource):
             request.user, historical=True, deleted=True)
 
     def dehydrate(self, bundle):
-        # Workaround for this tastypie issue:
-        # https://github.com/toastdriven/django-tastypie/issues/201
-        bundle.data['username'] = bundle.obj.username
-
         # Add a value indicating if something is on the change queue
         bundle.data['on_changeq'] = bundle.obj.on_changeq()
 
@@ -166,7 +169,7 @@ class CredResource(ModelResource):
         queryset = Cred.objects.filter(is_deleted=False, latest=None)
         always_return_data = True
         resource_name = 'cred'
-        excludes = ['username', 'is_deleted', 'attachment']
+        excludes = ['is_deleted', 'attachment']
         authentication = MultiAuthentication(
             SessionAuthentication(), MultiApiKeyAuthentication())
         authorization = CredAuthorization()
