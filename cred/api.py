@@ -172,6 +172,7 @@ class CredResource(ModelResource):
         authorization = CredAuthorization()
         filtering = {
             'title': ('exact', 'contains', 'icontains'),
+            'slug': ('exact', 'contains', 'icontains', 'startswith'),
             'url': ('exact', 'startswith', ),
             'group': ALL_WITH_RELATIONS,
         }
