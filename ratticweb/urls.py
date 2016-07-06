@@ -16,7 +16,8 @@ v1_api.register(TagResource())
 v1_api.register(GroupResource())
 
 # Setup the base paths for applications, and the API
-base_urlpatterns = patterns('',
+base_urlpatterns = patterns(
+    '',
     # Apps:
     url(r'^$', 'ratticweb.views.home', name='home'),
     url(r'^account/', include('account.urls')),
@@ -40,7 +41,8 @@ if settings.DEBUG:
     from django.contrib import admin
     admin.autodiscover()
 
-    base_urlpatterns += patterns('',
+    base_urlpatterns += patterns(
+        '',
         # Uncomment the admin/doc line below to enable admin documentation:
         url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
@@ -55,7 +57,8 @@ else:
     root = settings.RATTIC_ROOT_URL
 
 # Serve RatticDB from an alternate root if requested
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',
     url(r'^' + root, include(base_urlpatterns)),
 )
 

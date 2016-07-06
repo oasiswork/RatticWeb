@@ -34,7 +34,9 @@ class UserForm(forms.ModelForm):
         model = User
         fields = ('username', 'email', 'is_active', 'is_staff', 'groups')
         widgets = {
-            'groups': forms.SelectMultiple(attrs={'class': 'rattic-group-selector'}),
+            'groups': forms.SelectMultiple(attrs={
+                'class': 'rattic-group-selector'
+            }),
         }
 
     def clean(self):
@@ -80,7 +82,9 @@ class KeepassImportForm(forms.Form):
             db = keepass(cleaned_data['file'], cleaned_data['password'])
             cleaned_data['db'] = db
         except AuthenticationError:
-            msg = _('Could not read keepass file, the password you gave may not be correct.')
+            msg = _(
+                'Could not read keepass file, the password you gave '
+                'may not be correct.')
             self._errors['file'] = self.error_class([msg])
             del cleaned_data['file']
             del cleaned_data['password']

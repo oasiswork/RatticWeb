@@ -60,7 +60,8 @@ def download(request, cfilter="special", value="all"):
             CredAudit.objects.bulk_create(auditlogs)
 
             # Give the Keepass file to the user
-            return export_keepass(creds, form.cleaned_data['password'], filename)
+            return export_keepass(
+                creds, form.cleaned_data['password'], filename)
     else:
         form = ExportForm()  # An unbound form
 
@@ -70,7 +71,9 @@ def download(request, cfilter="special", value="all"):
 
 
 @login_required
-def list(request, cfilter='special', value='all', sortdir='ascending', sort='title', page=1):
+def list(
+        request, cfilter='special', value='all', sortdir='ascending',
+        sort='title', page=1):
     # Setup basic stuff
     viewdict = {
         'credtitle': _('All passwords'),
@@ -101,23 +104,29 @@ def list(request, cfilter='special', value='all', sortdir='ascending', sort='tit
         groups = Group.objects.all()
 
     # Perform the search
-    (search_object, cred_list) = cred_search(request.user, cfilter, value, sortdir, sort, groups)
+    (search_object, cred_list) = cred_search(
+        request.user, cfilter, value, sortdir, sort, groups)
 
     # Apply the filters
     if cfilter == 'tag':
-        viewdict['credtitle'] = _('Passwords tagged with %(tagname)s') % {'tagname': search_object.name, }
+        viewdict['credtitle'] = _('Passwords tagged with %(tagname)s') % {
+                'tagname': search_object.name, }
         viewdict['buttons']['export'] = True
 
     elif cfilter == 'group':
-        viewdict['credtitle'] = _('Passwords in group %(groupname)s') % {'groupname': search_object.name, }
+        viewdict['credtitle'] = _('Passwords in group %(groupname)s') % {
+            'groupname': search_object.name, }
         viewdict['buttons']['export'] = True
 
     elif cfilter == 'search':
-        viewdict['credtitle'] = _('Passwords for search "%(searchstring)s"') % {'searchstring': search_object, }
+        viewdict['credtitle'] = _(
+            'Passwords for search "%(searchstring)s"') % {
+                'searchstring': search_object, }
         viewdict['buttons']['export'] = True
 
     elif cfilter == 'history':
-        viewdict['credtitle'] = _('Versions of: "%(credtitle)s"') % {'credtitle': search_object.title, }
+        viewdict['credtitle'] = _('Versions of: "%(credtitle)s"') % {
+            'credtitle': search_object.title, }
         viewdict['buttons']['add'] = False
         viewdict['buttons']['delete'] = False
         viewdict['buttons']['changeq'] = False
@@ -125,10 +134,14 @@ def list(request, cfilter='special', value='all', sortdir='ascending', sort='tit
 
     elif cfilter == 'changeadvice':
         alert = {}
-        alert['message'] = _("That user is now disabled. Here is a list of passwords that they have viewed that have not since been changed. You probably want to add them all to the change queue.")
+        alert['message'] = _(
+            "That user is now disabled. Here is a list of passwords that "
+            "they have viewed that have not since been changed. You probably "
+            "want to add them all to the change queue.")
         alert['type'] = 'info'
 
-        viewdict['credtitle'] = _('Changes required for "%(username)s"') % {'username': search_object.username}
+        viewdict['credtitle'] = _('Changes required for "%(username)s"') % {
+            'username': search_object.username}
         viewdict['buttons']['add'] = False
         viewdict['buttons']['delete'] = True
         viewdict['buttons']['changeq'] = True
@@ -198,7 +211,8 @@ def detail(request, cred_id):
     if not cred.is_visible_by(request.user):
         raise Http404
 
-    CredAudit(audittype=CredAudit.CREDVIEW, cred=cred, user=request.user).save()
+    CredAudit(
+        audittype=CredAudit.CREDVIEW, cred=cred, user=request.user).save()
 
     if request.user.is_staff:
         credlogs = cred.logs.all()[:5]
@@ -236,13 +250,16 @@ def downloadattachment(request, cred_id, typ="attachment"):
         raise Http404
 
     # Write the audit log, as a password view
-    CredAudit(audittype=CredAudit.CREDPASSVIEW, cred=cred, user=request.user).save()
+    CredAudit(
+        audittype=CredAudit.CREDPASSVIEW, cred=cred, user=request.user).save()
 
-    # Send the result back in a way that prevents the browser from executing it,
+    # Send the result back in a way that prevents
+    # the browser from executing it,
     # forces a download, and names it the same as when it was uploaded.
     response = HttpResponse(mimetype='application/octet-stream')
     response.write(getattr(cred, typ).read())
-    response['Content-Disposition'] = 'attachment; filename="%s"' % getattr(cred, "%s_name" % typ)
+    response['Content-Disposition'] = 'attachment; filename="%s"' % getattr(
+        cred, "%s_name" % typ)
     response['Content-Length'] = response.tell()
     return response
 
@@ -285,13 +302,17 @@ def add(request):
         form = CredForm(request.user, request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            CredAudit(audittype=CredAudit.CREDADD, cred=form.instance, user=request.user).save()
+            CredAudit(
+                audittype=CredAudit.CREDADD, cred=form.instance,
+                user=request.user).save()
             return HttpResponseRedirect(reverse('cred.views.list'))
     else:
         form = CredForm(request.user)
 
-    return render(request, 'cred_edit.html', {'form': form, 'action':
-      reverse('cred.views.add'), 'icons': get_icon_list()})
+    return render(request, 'cred_edit.html', {
+        'form': form,
+        'action': reverse('cred.views.add'), 'icons': get_icon_list()
+    })
 
 
 @login_required
@@ -308,7 +329,8 @@ def edit(request, cred_id):
         raise Http404
 
     if request.method == 'POST':
-        form = CredForm(request.user, request.POST, request.FILES, instance=cred)
+        form = CredForm(
+            request.user, request.POST, request.FILES, instance=cred)
 
         # Password change possible only for owner group
         if form.is_valid() and cred.group in request.user.groups.all():
@@ -330,14 +352,18 @@ def edit(request, cred_id):
 
             # If we dont have anywhere to go, go to the details page
             if next is None:
-                return HttpResponseRedirect(reverse('cred.views.detail', args=(cred.id,)))
+                return HttpResponseRedirect(
+                    reverse('cred.views.detail', args=(cred.id,)))
             else:
                 return HttpResponseRedirect(next)
     else:
         form = CredForm(request.user, instance=cred)
-        CredAudit(audittype=CredAudit.CREDPASSVIEW, cred=cred, user=request.user).save()
+        CredAudit(
+            audittype=CredAudit.CREDPASSVIEW, cred=cred,
+            user=request.user).save()
 
-    return render(request, 'cred_edit.html', {'form': form,
+    return render(request, 'cred_edit.html', {
+        'form': form,
         'action': reverse('cred.views.edit', args=(cred.id,)),
         'next': next,
         'icons': get_icon_list(),
@@ -364,13 +390,21 @@ def delete(request, cred_id):
     if not cred.is_owned_by(request.user):
         raise Http404
     if request.method == 'POST':
-        CredAudit(audittype=CredAudit.CREDDELETE, cred=cred, user=request.user).save()
+        CredAudit(
+            audittype=CredAudit.CREDDELETE, cred=cred,
+            user=request.user).save()
         cred.delete()
         return HttpResponseRedirect(reverse('cred.views.list'))
 
-    CredAudit(audittype=CredAudit.CREDVIEW, cred=cred, user=request.user).save()
+    CredAudit(
+        audittype=CredAudit.CREDVIEW, cred=cred, user=request.user).save()
 
-    return render(request, 'cred_detail.html', {'cred': cred, 'lastchange': lastchange, 'action': reverse('cred.views.delete', args=(cred_id,)), 'delete': True})
+    return render(request, 'cred_detail.html', {
+        'cred': cred,
+        'lastchange': lastchange,
+        'action': reverse('cred.views.delete', args=(cred_id,)),
+        'delete': True
+    })
 
 
 @login_required
@@ -421,8 +455,11 @@ def addtoqueue(request, cred_id):
     if not cred.is_owned_by(request.user):
         raise Http404
     CredChangeQ.objects.add_to_changeq(cred)
-    CredAudit(audittype=CredAudit.CREDSCHEDCHANGE, cred=cred, user=request.user).save()
-    return HttpResponseRedirect(reverse('cred.views.list', args=('special', 'changeq')))
+    CredAudit(
+        audittype=CredAudit.CREDSCHEDCHANGE, cred=cred,
+        user=request.user).save()
+    return HttpResponseRedirect(
+        reverse('cred.views.list', args=('special', 'changeq')))
 
 
 @login_required
@@ -430,7 +467,9 @@ def bulkdelete(request):
     todel = Cred.objects.filter(id__in=request.POST.getlist('credcheck'))
     for c in todel:
         if c.is_owned_by(request.user) and c.latest is None:
-            CredAudit(audittype=CredAudit.CREDDELETE, cred=c, user=request.user).save()
+            CredAudit(
+                audittype=CredAudit.CREDDELETE, cred=c,
+                user=request.user).save()
             c.delete()
 
     redirect = request.POST.get('next', reverse('cred.views.list'))
@@ -442,7 +481,8 @@ def bulkundelete(request):
     toundel = Cred.objects.filter(id__in=request.POST.getlist('credcheck'))
     for c in toundel:
         if c.is_owned_by(request.user):
-            CredAudit(audittype=CredAudit.CREDADD, cred=c, user=request.user).save()
+            CredAudit(
+                audittype=CredAudit.CREDADD, cred=c, user=request.user).save()
             c.is_deleted = False
             c.save()
 
@@ -455,7 +495,9 @@ def bulkaddtoqueue(request):
     tochange = Cred.objects.filter(id__in=request.POST.getlist('credcheck'))
     for c in tochange:
         if c.is_owned_by(request.user) and c.latest is None:
-            CredAudit(audittype=CredAudit.CREDSCHEDCHANGE, cred=c, user=request.user).save()
+            CredAudit(
+                audittype=CredAudit.CREDSCHEDCHANGE, cred=c,
+                user=request.user).save()
             CredChangeQ.objects.add_to_changeq(c)
 
     redirect = request.POST.get('next', reverse('cred.views.list'))
@@ -468,7 +510,9 @@ def bulktagcred(request):
     tag = get_object_or_404(Tag, pk=request.POST.get('tag'))
     for c in tochange:
         if c.is_owned_by(request.user) and c.latest is None:
-            CredAudit(audittype=CredAudit.CREDMETACHANGE, cred=c, user=request.user).save()
+            CredAudit(
+                audittype=CredAudit.CREDMETACHANGE, cred=c,
+                user=request.user).save()
             c.tags.add(tag)
 
     redirect = request.POST.get('next', reverse('cred.views.list'))

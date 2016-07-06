@@ -60,12 +60,17 @@ class GroupResource(ModelResource):
         if request.user.is_staff:
             return super(GroupResource, self).get_object_list(request)
         else:
-            return super(GroupResource, self).get_object_list(request).filter(id__in=request.user.groups.all())
+            return super(GroupResource, self).get_object_list(request).filter(
+                id__in=request.user.groups.all())
 
     class Meta:
         queryset = Group.objects.all()
         always_return_data = True
         resource_name = 'group'
-        authentication = MultiAuthentication(MultiApiKeyAuthentication(), SessionAuthentication())
+        authentication = MultiAuthentication(
+            MultiApiKeyAuthentication(), SessionAuthentication())
         authorization = RatticGroupAuthorization()
         validation = FormValidation(form_class=GroupForm)
+        filtering = {
+            'name': ('exact', 'contains', 'icontains'),
+        }

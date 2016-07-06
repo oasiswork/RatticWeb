@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from tastypie import fields, http
 from tastypie.authentication import SessionAuthentication, MultiAuthentication
 from tastypie.validation import FormValidation
-from tastypie.resources import ModelResource
+from tastypie.resources import ModelResource, ALL_WITH_RELATIONS
 from tastypie.authorization import Authorization
 from tastypie.exceptions import Unauthorized
 
@@ -13,6 +13,7 @@ from account.authentication import MultiApiKeyAuthentication
 from cred.models import Cred, Tag, CredAudit
 from cred.forms import TagForm
 from cred.ssh_key import SSHKey
+from staff.api import GroupResource
 
 import paramiko
 
@@ -27,8 +28,11 @@ class CredAuthorization(Authorization):
         if not bundle.obj.is_visible_by(bundle.request.user):
             return False
 
-        # This audit should go somewhere else, is there a detail list function we can override?
-        CredAudit(audittype=CredAudit.CREDPASSVIEW, cred=bundle.obj, user=bundle.request.user).save()
+        # This audit should go somewhere else,
+        # is there a detail list function we can override?
+        CredAudit(
+            audittype=CredAudit.CREDPASSVIEW, cred=bundle.obj,
+            user=bundle.request.user).save()
         return True
 
     def create_list(self, object_list, bundle):
@@ -46,7 +50,9 @@ class CredAuthorization(Authorization):
         if not bundle.obj.is_owned_by(bundle.request.user):
             return False
 
-        CredAudit(audittype=CredAudit.CREDCHANGE, cred=bundle.obj, user=bundle.request.user).save()
+        CredAudit(
+            audittype=CredAudit.CREDCHANGE, cred=bundle.obj,
+            user=bundle.request.user).save()
         return True
 
     def delete_list(self, object_list, bundle):
@@ -86,9 +92,13 @@ class TagAuthorization(Authorization):
 
 
 class CredResource(ModelResource):
+
+    group = fields.ForeignKey(GroupResource, 'group', full=True)
+
     def get_object_list(self, request):
         # Only show latest, not deleted and accessible credentials
-        return Cred.objects.visible(request.user, historical=True, deleted=True)
+        return Cred.objects.visible(
+            request.user, historical=True, deleted=True)
 
     def dehydrate(self, bundle):
         # Workaround for this tastypie issue:
@@ -97,6 +107,9 @@ class CredResource(ModelResource):
 
         # Add a value indicating if something is on the change queue
         bundle.data['on_changeq'] = bundle.obj.on_changeq()
+
+        # Only display group name, not full object
+        bundle.data['group'] = bundle.obj.group
 
         # Unless you are viewing the details for a cred, hide the password
         if self.get_resource_uri(bundle) != bundle.request.path:
@@ -119,11 +132,13 @@ class CredResource(ModelResource):
         basic_bundle = self.build_bundle(request=request)
 
         try:
-            obj = self.cached_obj_get(bundle=basic_bundle, **self.remove_api_resource_names(kwargs))
+            obj = self.cached_obj_get(
+                bundle=basic_bundle, **self.remove_api_resource_names(kwargs))
         except ObjectDoesNotExist:
             return http.HttpNotFound()
         except MultipleObjectsReturned:
-            return http.HttpMultipleChoices("More than one resource is found at this URI.")
+            return http.HttpMultipleChoices(
+                "More than one resource is found at this URI.")
 
         ssh_key = request.FILES['ssh_key']
         got = ssh_key.read()
@@ -144,25 +159,31 @@ class CredResource(ModelResource):
             bundle = self.build_bundle(obj=obj, request=request)
             bundle = self.full_dehydrate(bundle)
             bundle = self.alter_detail_data_to_serialize(request, bundle)
-            return self.create_response(request, bundle, response_class=http.HttpAccepted)
+            return self.create_response(
+                request, bundle, response_class=http.HttpAccepted)
 
     class Meta:
         queryset = Cred.objects.filter(is_deleted=False, latest=None)
         always_return_data = True
         resource_name = 'cred'
         excludes = ['username', 'is_deleted', 'attachment']
-        authentication = MultiAuthentication(SessionAuthentication(), MultiApiKeyAuthentication())
+        authentication = MultiAuthentication(
+            SessionAuthentication(), MultiApiKeyAuthentication())
         authorization = CredAuthorization()
         filtering = {
             'title': ('exact', 'contains', 'icontains'),
             'url': ('exact', 'startswith', ),
+            'group': ALL_WITH_RELATIONS,
         }
 
 
 class TagResource(ModelResource):
-    # When showing a tag, show all the creds under it, that we are allowed to see
-    creds = fields.ToManyField(CredResource,
-        attribute=lambda bundle: Cred.objects.visible(bundle.request.user).filter(tags=bundle.obj),
+    # When showing a tag, show all the creds under it,
+    # that we are allowed to see
+    creds = fields.ToManyField(
+        CredResource,
+        attribute=lambda bundle: Cred.objects.visible(
+            bundle.request.user).filter(tags=bundle.obj),
         null=True,
     )
 
@@ -170,9 +191,12 @@ class TagResource(ModelResource):
         queryset = Tag.objects.all()
         always_return_data = True
         filtering = {
-            'name': ('exact', 'contains', 'icontains', 'startswith', 'istartswith'),
+            'name': (
+                'exact', 'contains', 'icontains',
+                'startswith', 'istartswith'),
         }
         resource_name = 'tag'
-        authentication = MultiAuthentication(SessionAuthentication(), MultiApiKeyAuthentication())
+        authentication = MultiAuthentication(
+            SessionAuthentication(), MultiApiKeyAuthentication())
         authorization = TagAuthorization()
         validation = FormValidation(form_class=TagForm)

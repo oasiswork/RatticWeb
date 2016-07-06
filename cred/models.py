@@ -38,10 +38,11 @@ class SearchManager(models.Manager):
         if not historical:
             qs = qs.filter(latest=None)
 
-        qs = qs.filter(Q(group__in=usergroups)
-                     | Q(latest__group__in=usergroups)
-                     | Q(groups__in=usergroups)
-                     | Q(latest__groups__in=usergroups)).distinct()
+        qs = qs.filter(
+            Q(group__in=usergroups)
+            | Q(latest__group__in=usergroups)
+            | Q(groups__in=usergroups)
+            | Q(latest__groups__in=usergroups)).distinct()
 
         return qs
 
@@ -50,14 +51,18 @@ class SearchManager(models.Manager):
             # Get a list of changes done
             Q(cred__group__in=grouplist, audittype=CredAudit.CREDCHANGE) |
             # Combined with a list of views from this user
-            Q(cred__group__in=grouplist, audittype__in=[CredAudit.CREDVIEW, CredAudit.CREDPASSVIEW, CredAudit.CREDADD, CredAudit.CREDEXPORT], user=user)
+            Q(cred__group__in=grouplist, audittype__in=[
+                CredAudit.CREDVIEW, CredAudit.CREDPASSVIEW,
+                CredAudit.CREDADD, CredAudit.CREDEXPORT], user=user)
         ).order_by('time', 'id')
 
         # Go through each entry in time order
         tochange = []
         for l in logs:
             # If this user viewed the password then change it
-            if l.audittype in (CredAudit.CREDVIEW, CredAudit.CREDPASSVIEW, CredAudit.CREDADD, CredAudit.CREDEXPORT):
+            if l.audittype in (
+                    CredAudit.CREDVIEW, CredAudit.CREDPASSVIEW,
+                    CredAudit.CREDADD, CredAudit.CREDEXPORT):
                 tochange.append(l.cred.id)
             # If there was a change done not by this user, dont change it
             if l.audittype == CredAudit.CREDCHANGE and l.user != user:
@@ -69,28 +74,51 @@ class SearchManager(models.Manager):
 
 
 class Cred(models.Model):
-    METADATA = ('description', 'descriptionmarkdown', 'group', 'groups', 'tags', 'iconname', 'latest', 'id', 'modified', 'attachment_name', 'ssh_key_name')
+    METADATA = (
+        'description', 'descriptionmarkdown', 'group', 'groups', 'tags',
+        'iconname', 'latest', 'id', 'modified', 'attachment_name',
+        'ssh_key_name')
     SORTABLES = ('title', 'username', 'group', 'id', 'modified')
-    APP_SET = ('is_deleted', 'latest', 'modified', 'attachment_name', 'ssh_key_name')
+    APP_SET = (
+        'is_deleted', 'latest', 'modified', 'attachment_name', 'ssh_key_name')
     objects = SearchManager()
 
     # User changable fields
-    title = models.CharField(verbose_name=_('Title'), max_length=64, db_index=True)
-    url = models.URLField(verbose_name=_('URL'), blank=True, null=True, db_index=True)
-    username = models.CharField(verbose_name=_('Username'), max_length=250, blank=True, null=True, db_index=True)
-    password = models.CharField(verbose_name=_('Password'), max_length=250, blank=True, null=True)
-    descriptionmarkdown = models.BooleanField(verbose_name=_('Markdown Description'), default=False, )
-    description = models.TextField(verbose_name=_('Description'), blank=True, null=True)
+    title = models.CharField(
+        verbose_name=_('Title'), max_length=64, db_index=True)
+    url = models.URLField(
+        verbose_name=_('URL'), blank=True, null=True, db_index=True)
+    username = models.CharField(
+        verbose_name=_('Username'), max_length=250, blank=True,
+        null=True, db_index=True)
+    password = models.CharField(
+        verbose_name=_('Password'), max_length=250, blank=True, null=True)
+    descriptionmarkdown = models.BooleanField(
+        verbose_name=_('Markdown Description'), default=False, )
+    description = models.TextField(
+        verbose_name=_('Description'), blank=True, null=True)
     group = models.ForeignKey(Group, verbose_name=_('Group'))
-    groups = models.ManyToManyField(Group, verbose_name=_('Groups'), related_name="child_creds", blank=True, null=True, default=None)
-    tags = models.ManyToManyField(Tag, verbose_name=_('Tags'), related_name='child_creds', blank=True, null=True, default=None)
-    iconname = models.CharField(verbose_name=_('Icon'), default='Key.png', max_length=64)
-    ssh_key = SizedFileField(verbose_name=_('SSH key'), storage=CredAttachmentStorage(), max_upload_size=settings.RATTIC_MAX_ATTACHMENT_SIZE, null=True, blank=True, upload_to='not required')
-    attachment = SizedFileField(verbose_name=_('Attachment'), storage=CredAttachmentStorage(), max_upload_size=settings.RATTIC_MAX_ATTACHMENT_SIZE, null=True, blank=True, upload_to='not required')
+    groups = models.ManyToManyField(
+        Group, verbose_name=_('Groups'), related_name="child_creds",
+        blank=True, null=True, default=None)
+    tags = models.ManyToManyField(
+        Tag, verbose_name=_('Tags'), related_name='child_creds',
+        blank=True, null=True, default=None)
+    iconname = models.CharField(
+        verbose_name=_('Icon'), default='Key.png', max_length=64)
+    ssh_key = SizedFileField(
+        verbose_name=_('SSH key'), storage=CredAttachmentStorage(),
+        max_upload_size=settings.RATTIC_MAX_ATTACHMENT_SIZE,
+        null=True, blank=True, upload_to='not required')
+    attachment = SizedFileField(
+        verbose_name=_('Attachment'), storage=CredAttachmentStorage(),
+        max_upload_size=settings.RATTIC_MAX_ATTACHMENT_SIZE,
+        null=True, blank=True, upload_to='not required')
 
     # Application controlled fields
     is_deleted = models.BooleanField(default=False, db_index=True)
-    latest = models.ForeignKey('Cred', related_name='history', blank=True, null=True, db_index=True)
+    latest = models.ForeignKey(
+        'Cred', related_name='history', blank=True, null=True, db_index=True)
     modified = models.DateTimeField(db_index=True)
     created = models.DateTimeField(auto_now_add=True)
 
@@ -163,11 +191,15 @@ class Cred(models.Model):
             return True
 
         # If its the latest and in your group you can see it
-        if not self.is_deleted and self.latest is None and self.group in user.groups.all():
+        if (
+                not self.is_deleted and self.latest is None and
+                self.group in user.groups.all()):
             return True
 
         # If the latest is in your group you can see it
-        if not self.is_deleted and self.latest is not None and self.latest.group in user.groups.all():
+        if (
+                not self.is_deleted and self.latest is not None and
+                self.latest.group in user.groups.all()):
             return True
 
         return False
@@ -177,12 +209,21 @@ class Cred(models.Model):
         if user.is_staff:
             return True
 
-        # If its the latest and (in your group or it belongs to a viewer group you also belong to) you can see it
-        if not self.is_deleted and self.latest is None and (self.group in user.groups.all() or any([g in user.groups.all() for g in self.groups.all()])):
+        # If its the latest and (in your group or it belongs
+        # to a viewer group you also belong to) you can see it
+        if not self.is_deleted and self.latest is None and (
+                self.group in user.groups.all() or
+                any([g in user.groups.all() for g in self.groups.all()])):
             return True
 
         # If the latest is in your group you can see it
-        if not self.is_deleted and self.latest is not None and (self.latest.group in user.groups.all() or any([g in user.groups.all() for g in self.latest.groups.all()])):
+        if (
+                not self.is_deleted and self.latest is not None and
+                (self.latest.group in user.groups.all() or
+                    any([
+                        g in user.groups.all() for g in
+                        self.latest.groups.all()
+                        ]))):
             return True
 
         return False
