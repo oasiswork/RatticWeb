@@ -40,14 +40,8 @@ class CredAuthorization(Authorization):
         raise Unauthorized("Not yet implemented.")
 
     def create_detail(self, object_list, bundle):
-        if not bundle.request.user.groups.filter(
-                name=bundle.obj.group).exists():
-            return False
-
-        CredAudit(
-            audittype=CredAudit.CREDADD, cred=bundle.obj,
-            user=bundle.request.user).save()
-        return True
+        return bundle.request.user.groups.filter(
+                name=bundle.obj.group).exists()
 
     def update_list(self, object_list, bundle):
         raise Unauthorized("Not yet implemented.")
@@ -124,6 +118,14 @@ class CredResource(ModelResource):
         else:
             del bundle.data['ssh_key']
 
+        return bundle
+
+    def obj_create(self, bundle, **kwargs):
+        bundle = super(CredResource, self).obj_create(bundle, **kwargs)
+
+        CredAudit(
+            audittype=CredAudit.CREDADD, cred=bundle.obj,
+            user=bundle.request.user).save()
         return bundle
 
     def post_detail(self, request, **kwargs):
