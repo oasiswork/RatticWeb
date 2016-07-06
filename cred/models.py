@@ -86,6 +86,9 @@ class Cred(models.Model):
     # User changable fields
     title = models.CharField(
         verbose_name=_('Title'), max_length=64, db_index=True)
+    slug = models.CharField(
+        verbose_name=_('Slug'), max_length=64, db_index=True,
+        null=True, blank=True)
     url = models.URLField(
         verbose_name=_('URL'), blank=True, null=True, db_index=True)
     username = models.CharField(
@@ -126,6 +129,10 @@ class Cred(models.Model):
     attachment_name = models.CharField(max_length=64, null=True, blank=True)
 
     def save(self, *args, **kwargs):
+        # Generate the entry slug if not specified
+        if not self.slug:
+            self.slug = self.title.lower().replace(' ', '_')
+
         try:
             # Get a copy of the old object from the db
             old = Cred.objects.get(id=self.id)
