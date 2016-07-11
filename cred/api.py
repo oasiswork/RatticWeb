@@ -61,7 +61,14 @@ class CredAuthorization(Authorization):
         raise Unauthorized("Not yet implemented.")
 
     def delete_detail(self, object_list, bundle):
-        raise Unauthorized("Not yet implemented.")
+        # Check user has perms
+        if not bundle.obj.is_owned_by(bundle.request.user):
+            return False
+
+        CredAudit(
+            audittype=CredAudit.CREDDELETE, cred=bundle.obj,
+            user=bundle.request.user).save()
+        return True
 
 
 class TagAuthorization(Authorization):
