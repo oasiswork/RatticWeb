@@ -72,5 +72,5 @@ class GroupResource(ModelResource):
         authorization = RatticGroupAuthorization()
         validation = FormValidation(form_class=GroupForm)
         filtering = {
-            'name': ('exact', 'contains', 'icontains'),
+            'name': ('exact', 'iexact', 'contains', 'icontains'),
         }
