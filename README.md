@@ -1,7 +1,9 @@
 RatticWeb
 =========
 
-Build Status: [![Build Status](https://travis-ci.org/tildaslash/RatticWeb.png?branch=master)](https://travis-ci.org/tildaslash/RatticWeb)
+_**This is a fork we use in production. Please make your PRs against the [master repo](https://github.com/tildaslash/RatticWeb) (although it does not seem to be maintained anymore...)**_
+
+Build Status: [![Build Status](https://travis-ci.org/oasiswork/RatticWeb.png?branch=prod)](https://travis-ci.org/oasiswork/RatticWeb)
 
 RatticWeb is the website part of the Rattic password management solution, which allows you to easily manage your users and passwords.
 
@@ -14,7 +16,6 @@ If you decide to use RatticWeb you should take the following into account:
 
 Support and Known Issues:
 * Through <a href="http://twitter.com/RatticDB">twitter</a> or <a href="https://github.com/tildaslash/RatticWeb/issues?state=open">Github Issues</a>
-* Apache config needs to have "WSGIPassAuthorization On" for the API keys to work  
+* Apache config needs to have "WSGIPassAuthorization On" for the API keys to work
 
 Dev Setup: <https://github.com/tildaslash/RatticWeb/wiki/Development>
-
