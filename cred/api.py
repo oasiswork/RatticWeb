@@ -41,7 +41,7 @@ class CredAuthorization(Authorization):
 
     def create_detail(self, object_list, bundle):
         return bundle.request.user.groups.filter(
-                name=bundle.obj.group).exists()
+            name=bundle.obj.group).exists()
 
     def update_list(self, object_list, bundle):
         raise Unauthorized("Not yet implemented.")

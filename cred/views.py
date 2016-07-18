@@ -110,7 +110,7 @@ def list(
     # Apply the filters
     if cfilter == 'tag':
         viewdict['credtitle'] = _('Passwords tagged with %(tagname)s') % {
-                'tagname': search_object.name, }
+            'tagname': search_object.name, }
         viewdict['buttons']['export'] = True
 
     elif cfilter == 'group':
