@@ -26,8 +26,7 @@ class JavascriptTests(StaticLiveServerTestCase):
 
     @classmethod
     def setUpClass(cls):
-        # if config.get("no_selenium"):
-        if True:
+        if config.get("no_selenium"):
             raise SkipTest("Told not to run selenium tests")
 
         ffp = FirefoxProfile()
